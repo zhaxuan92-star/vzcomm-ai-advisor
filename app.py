@@ -37,11 +37,12 @@ def ask_gemini(prompt_text):
     return "❌ Tất cả API Keys đều gặp lỗi hoặc hết hạn mức!"
 
 def get_ns_headers(nation_name):
-    """Tạo Header chuẩn hóa đúng quy định NationStates API (Tránh bị khóa IP)"""
+    """Tạo Header chuẩn hóa đúng quy định NationStates API"""
     return {
-        'User-Agent': f'VzcommAIAdvisor/2.0 (Maintained by Nation:{nation_name}; Interactive AI Advisor Project)'
+        # Sửa lại dòng User-Agent có thêm email hoặc đúng cấu trúc chuẩn của NS API
+        'User-Agent': f'VzcommAIAdvisor/2.0 (Nation:{nation_name}; User:vzcomm_dev)'
     }
-
+    
 # ==================== ROUTES QUẢN LÝ TÀI KHOẢN ====================
 
 @app.route('/login', methods=['GET', 'POST'])
