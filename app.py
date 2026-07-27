@@ -44,11 +44,12 @@ def ask_gemini(prompt_text):
 
 def get_ns_headers(nation_name):
     """
-    Tạo Header chuẩn 100% theo đúng quy định API của NationStates.
-    Sử dụng email Developer zhaxuan92@gmail.com để tránh triệt để lỗi HTTP 403 Forbidden.
+    Tạo Header chuẩn tuyệt đối theo quy định của NationStates API.
+    Định dạng: <AppName>/<Version> (by <NationName>; contact:<Email>)
     """
+    clean_nation = nation_name.strip().lower().replace(" ", "_")
     return {
-        'User-Agent': f'VzcommAIAdvisor/2.0 (by Nation/{nation_name}; contact:zhaxuan92@gmail.com)'
+        'User-Agent': f'VzcommAIAdvisor/2.0 (by nation:{clean_nation}; contact:zhaxuan92@gmail.com)'
     }
 
 # ==================== ROUTES QUẢN LÝ TÀI KHOẢN & SESSION ====================
@@ -107,7 +108,10 @@ def index():
     issues = []
     
     try:
-        res = requests.get(url, headers=headers, timeout=10)
+        # Sử dụng Session của requests để đảm bảo connection và headers giữ nguyên
+        req_session = requests.Session()
+        res = req_session.get(url, headers=headers, timeout=12)
+        
         debug_log['status_code'] = res.status_code
         debug_log['raw_xml'] = res.text
         
@@ -206,7 +210,8 @@ def respond_issue():
     headers['X-Password'] = password
     
     try:
-        res = requests.post(url, data=payload, headers=headers, timeout=10)
+        req_session = requests.Session()
+        res = req_session.post(url, data=payload, headers=headers, timeout=12)
         if res.status_code == 200 and "<ERROR>" not in res.text:
             return jsonify({'status': 'success', 'message': f'Đã giải quyết thành công Issue #{issue_id} với Lựa chọn {option_id}!'})
         else:
