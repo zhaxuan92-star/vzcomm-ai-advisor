@@ -5,23 +5,28 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from dotenv import load_dotenv
 from google import genai
 
+# Tải biến môi trường từ file .env
 load_dotenv()
 
 app = Flask(__name__)
-# Key bí mật để mã hóa Session đăng nhập của người dùng
+
+# Cấu hình Secret Key mã hóa Session
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "vzcomm_secret_key_2026_super_secure")
 
-# Cấu hình Gemini API Keys
+# Cấu hình danh sách Gemini API Keys để xoay vòng (Fallback)
 GEMINI_KEYS = [
     os.getenv("GEMINI_API_KEY"),
     os.getenv("GEMINI_API_KEY_2")
 ]
+# Lọc bỏ các key rỗng
 GEMINI_KEYS = [k for k in GEMINI_KEYS if k]
 
 def ask_gemini(prompt_text):
-    """Hàm gọi Gemini AI với cơ chế xoay API Key linh hoạt"""
+    """
+    Hàm gọi Gemini AI với cơ chế tự động chuyển sang Key dự phòng nếu Key chính gặp lỗi.
+    """
     if not GEMINI_KEYS:
-        return "⚠️ Chưa cấu hình GEMINI_API_KEY trên Server."
+        return "⚠️ Chưa cấu hình GEMINI_API_KEY trên Server môi trường."
         
     for idx, key in enumerate(GEMINI_KEYS):
         try:
@@ -32,22 +37,27 @@ def ask_gemini(prompt_text):
             )
             return response.text
         except Exception as e:
-            print(f"[DEBUG] Key {idx+1} lỗi: {e}")
+            print(f"[DEBUG] Gemini Key {idx+1} bị lỗi hoặc hết hạn: {e}")
             continue
-    return "❌ Tất cả API Keys đều gặp lỗi hoặc hết hạn mức!"
+            
+    return "❌ Tất cả API Keys của Gemini đều gặp lỗi hoặc đã hết hạn mức truy cập!"
 
 def get_ns_headers(nation_name):
-    """Tạo Header chuẩn hóa đúng quy định NationStates API"""
+    """
+    Tạo Header chuẩn 100% theo đúng quy định API của NationStates.
+    Sử dụng email Developer zhaxuan92@gmail.com để tránh triệt để lỗi HTTP 403 Forbidden.
+    """
     return {
-        # Sửa lại dòng User-Agent có thêm email hoặc đúng cấu trúc chuẩn của NS API
-        'User-Agent': f'VzcommAIAdvisor/2.0 (Nation:{nation_name}; User:vzcomm_dev)'
+        'User-Agent': f'VzcommAIAdvisor/2.0 (by Nation/{nation_name}; contact:zhaxuan92@gmail.com)'
     }
-    
-# ==================== ROUTES QUẢN LÝ TÀI KHOẢN ====================
+
+# ==================== ROUTES QUẢN LÝ TÀI KHOẢN & SESSION ====================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Trang đăng nhập quốc gia"""
+    """
+    Trang đăng nhập quốc gia, lưu thông tin vào Session.
+    """
     if request.method == 'POST':
         nation = request.form.get('nation', '').strip().lower().replace(" ", "_")
         password = request.form.get('password', '').strip()
@@ -56,7 +66,7 @@ def login():
         if not nation or not password:
             return render_template('login.html', error="Vui lòng nhập đầy đủ Tên Quốc Gia và Mật Khẩu!")
             
-        # Lưu vào Session của trình duyệt
+        # Lưu dữ liệu quốc gia vào Session
         session['nation'] = nation
         session['password'] = password
         session['ideology'] = ideology
@@ -67,15 +77,19 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """Xóa Session - Đăng xuất khỏi quốc gia hiện tại"""
+    """
+    Đăng xuất khỏi quốc gia hiện tại và xóa thông tin Session.
+    """
     session.clear()
     return redirect(url_for('login'))
 
-# ==================== ROUTES CHÍNH ====================
+# ==================== ROUTES XỬ LÝ NỘI DUNG CHÍNH ====================
 
 @app.route('/')
 def index():
-    """Trang chủ Cố vấn AI"""
+    """
+    Trang chủ Cố vấn AI: Tải danh sách Issue từ NationStates API.
+    """
     if 'nation' not in session:
         return redirect(url_for('login'))
         
@@ -84,7 +98,12 @@ def index():
     headers = get_ns_headers(nation)
     
     url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation}&q=issues"
-    debug_log = {'url': url, 'status_code': None, 'raw_xml': '', 'error': None}
+    debug_log = {
+        'url': url, 
+        'status_code': None, 
+        'raw_xml': '', 
+        'error': None
+    }
     issues = []
     
     try:
@@ -106,23 +125,32 @@ def index():
                         'text': opt.text
                     })
                 
-                issues.append({'id': issue_id, 'title': title, 'text': text, 'options': options})
+                issues.append({
+                    'id': issue_id, 
+                    'title': title, 
+                    'text': text, 
+                    'options': options
+                })
         else:
-            debug_log['error'] = f"HTTP {res.status_code}"
+            debug_log['error'] = f"HTTP Status Code {res.status_code}"
     except Exception as e:
         debug_log['error'] = str(e)
         
-    return render_template('index.html', 
-                           nation=nation, 
-                           ideology=session.get('ideology'), 
-                           issues=issues, 
-                           debug=debug_log)
+    return render_template(
+        'index.html', 
+        nation=nation, 
+        ideology=session.get('ideology'), 
+        issues=issues, 
+        debug=debug_log
+    )
 
 @app.route('/analyze_issue', methods=['POST'])
 def analyze_issue():
-    """Nhận yêu cầu phân tích Issue từ giao diện và gửi cho Gemini"""
+    """
+    Nhận yêu cầu phân tích Issue và chuyển giao ngữ cảnh cho AI Gemini xử lý.
+    """
     if 'nation' not in session:
-        return jsonify({'status': 'error', 'message': 'Chưa đăng nhập!'}), 401
+        return jsonify({'status': 'error', 'message': 'Chưa đăng nhập quốc gia!'}), 401
         
     data = request.json
     issue_title = data.get('title')
@@ -143,8 +171,8 @@ def analyze_issue():
     {options_text}
     
     Yêu cầu:
-    1. Phân tích ngắn gọn tác động của từng phương án.
-    2. Đưa ra khuyến nghị chọn Option nào tối ưu nhất theo định hướng quốc gia.
+    1. Phân tích ngắn gọn tác động của từng phương án đến kinh tế, chính trị, tự do dân quyền.
+    2. Đưa ra khuyến nghị chọn Option nào tối ưu nhất theo đúng định hướng quốc gia.
     3. Trả lời với phong cách trang trọng, sắc bén của một Cố vấn Tối cao.
     """
     
@@ -153,9 +181,11 @@ def analyze_issue():
 
 @app.route('/respond', methods=['POST'])
 def respond_issue():
-    """Thực thi quyết định do Người chơi duyệt gửi lên NationStates API"""
+    """
+    Gửi quyết định của người chơi lên API chính thức của NationStates.
+    """
     if 'nation' not in session:
-        return jsonify({'status': 'error', 'message': 'Chưa đăng nhập!'}), 401
+        return jsonify({'status': 'error', 'message': 'Chưa đăng nhập quốc gia!'}), 401
         
     issue_id = request.form.get('issue_id')
     option_id = request.form.get('option_id')
@@ -173,16 +203,16 @@ def respond_issue():
     }
     
     headers = get_ns_headers(nation)
-    headers['X-Password'] = password # Xác thực quyền sở hữu hợp lệ
+    headers['X-Password'] = password
     
     try:
         res = requests.post(url, data=payload, headers=headers, timeout=10)
         if res.status_code == 200 and "<ERROR>" not in res.text:
-            return jsonify({'status': 'success', 'message': f'Đã giải quyết Issue #{issue_id} với Lựa chọn {option_id}!'})
+            return jsonify({'status': 'success', 'message': f'Đã giải quyết thành công Issue #{issue_id} với Lựa chọn {option_id}!'})
         else:
-            return jsonify({'status': 'error', 'message': f'NationStates phản hồi: {res.text}'}), 400
+            return jsonify({'status': 'error', 'message': f'NationStates phản hồi lỗi: {res.text}'}), 400
     except Exception as e:
-        return jsonify({'status': 'error', 'message': f'Lỗi kết nối: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': f'Lỗi kết nối tới Server NationStates: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
