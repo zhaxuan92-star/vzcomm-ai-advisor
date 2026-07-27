@@ -6,14 +6,11 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from dotenv import load_dotenv
 from google import genai
 
-# Tải biến môi trường từ file .env
 load_dotenv()
 
 app = Flask(__name__)
-# Key bí mật quản lý Session cho Flask
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "vzcomm_super_secure_secret_key_2026")
 
-# Lấy danh sách Gemini API Keys để dự phòng
 GEMINI_KEYS = [
     os.getenv("GEMINI_API_KEY"),
     os.getenv("GEMINI_API_KEY_2")
@@ -22,19 +19,12 @@ GEMINI_KEYS = [k for k in GEMINI_KEYS if k]
 
 
 def clean_nation_id(nation_input):
-    """
-    Hàm chuẩn hóa tên quốc gia:
-    Viết thường, thay khoảng trắng thành dấu gạch dưới để gọi API NationStates không bị lỗi 403.
-    """
     if not nation_input:
         return ""
     return nation_input.strip().lower().replace(" ", "_")
 
 
 def get_ns_headers(nation_name, password=None):
-    """
-    Tạo Header chuẩn tuyệt đối theo quy định bắt buộc của NationStates API.
-    """
     nation_id = clean_nation_id(nation_name)
     headers = {
         'User-Agent': f'VzcommAIAdvisor/4.0 (nation:{nation_id}; contact:zhaxuan92@gmail.com)'
@@ -45,9 +35,6 @@ def get_ns_headers(nation_name, password=None):
 
 
 def ask_gemini_for_choice(nation, ideology, issue_title, issue_text, options):
-    """
-    Gửi thông tin Issue sang Gemini AI để phân tích và chốt phương án chính xác.
-    """
     if not GEMINI_KEYS:
         return None, "⚠️ Chưa cấu hình GEMINI_API_KEY trên biến môi trường Render/Server."
 
@@ -80,7 +67,6 @@ def ask_gemini_for_choice(nation, ideology, issue_title, issue_text, options):
             )
             raw_text = response.text.strip()
 
-            # Lọc bỏ markdown codeblock nếu có
             if raw_text.startswith("```json"):
                 raw_text = raw_text[7:]
             if raw_text.startswith("```"):
@@ -98,14 +84,11 @@ def ask_gemini_for_choice(nation, ideology, issue_title, issue_text, options):
 
 
 def fetch_nation_issues(nation, password):
-    """
-    Truy vấn danh sách các Issue từ NationStates API.
-    """
     nation_id = clean_nation_id(nation)
-    headers = get_ns_headers(nation_id, password=password)  
-# ✅ SỬA THÀNH (Bỏ hoàn toàn dấu [ ]):
-url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation_id}&q=issues"
-
+    headers = get_ns_headers(nation_id, password=password)
+    
+    url = f"[https://www.nationstates.net/cgi-bin/api.cgi?nation=](https://www.nationstates.net/cgi-bin/api.cgi?nation=){nation_id}&q=issues"
+    
     issues = []
     error_msg = None
 
@@ -142,9 +125,6 @@ url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation_id}&q=issues
 
 
 def submit_issue_response(nation, password, issue_id, option_id):
-    """
-    Gửi lựa chọn xử lý Issue trực tiếp lên NationStates API.
-    """
     nation_id = clean_nation_id(nation)
     url = "[https://www.nationstates.net/cgi-bin/api.cgi](https://www.nationstates.net/cgi-bin/api.cgi)"
     payload = {
@@ -165,12 +145,8 @@ def submit_issue_response(nation, password, issue_id, option_id):
         return False, str(e)
 
 
-# ==================== CÁC TUYẾN ĐƯỜNG (ROUTES) ====================
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Trang Đăng nhập thông tin"""
     if request.method == 'POST':
         nation = request.form.get('nation', '').strip()
         password = request.form.get('password', '').strip()
@@ -189,7 +165,6 @@ def login():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    """Trang Quản lý Mật khẩu / Cấu hình Quốc Gia"""
     if 'nation' not in session:
         return redirect(url_for('login'))
 
@@ -216,14 +191,12 @@ def settings():
 
 @app.route('/logout')
 def logout():
-    """Đăng xuất tài khoản"""
     session.clear()
     return redirect(url_for('login'))
 
 
 @app.route('/')
 def index():
-    """Trang chính hiển thị thông tin & Issues"""
     if 'nation' not in session or 'password' not in session:
         return redirect(url_for('login'))
 
@@ -232,7 +205,6 @@ def index():
     clean_id = clean_nation_id(nation)
     issues, api_error = fetch_nation_issues(nation, password)
 
-    # Đường dẫn sang trang web chính thức của game NationStates
     game_url = f"[https://www.nationstates.net/nation=](https://www.nationstates.net/nation=){clean_id}"
 
     return render_template(
@@ -248,7 +220,6 @@ def index():
 
 @app.route('/auto_solve_all', methods=['POST'])
 def auto_solve_all():
-    """API Tự động giải quyết toàn bộ Issues bằng AI"""
     if 'nation' not in session or 'password' not in session:
         return jsonify({'status': 'error', 'message': 'Chưa đăng nhập!'}), 401
 
@@ -301,4 +272,4 @@ def auto_solve_all():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)     
+    app.run(host='0.0.0.0', port=5000, debug=True)
