@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cố Vấn AI - {{ nation.upper() }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0b0f19; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; padding-bottom: 50px; }
+        .navbar-custom { background: #161e2e; border-bottom: 1px solid #1f293d; }
+        .card-custom { background: #111827; border: 1px solid #1f2937; border-radius: 8px; }
+        .btn-ai { background: #8b5cf6; color: white; border: none; }
+        .btn-ai:hover { background: #7c3aed; color: white; }
+        .ai-box { background: #1e1b4b; border-left: 4px solid #a855f7; padding: 15px; border-radius: 4px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <!-- Thanh Điều Hướng Header -->
+    <nav class="navbar navbar-expand navbar-dark navbar-custom px-3 mb-4">
+        <span class="navbar-brand font-weight-bold">🏛️ Cố Vấn AI: <strong class="text-info">{{ nation.upper() }}</strong></span>
+        <div class="ms-auto d-flex align-items-center">
+            <span class="badge bg-secondary me-3 d-none d-md-inline">{{ ideology }}</span>
+            <a href="/logout" class="btn btn-outline-danger btn-sm">🚪 Đổi Quốc Gia</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Debug Terminal Status -->
+        <div class="card card-custom p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 text-warning">🛠️ Trạng Thái API NationStates</h6>
+                <span class="badge bg-{{ 'success' if debug.status_code == 200 else 'danger' }}">HTTP: {{ debug.status_code }}</span>
+            </div>
+            <small class="text-muted text-break">Endpoint: {{ debug.url }}</small>
+        </div>
+
+        <!-- Danh Sách Issues -->
+        {% if issues %}
+            {% for issue in issues %}
+                <div class="card card-custom p-4 mb-4">
+                    <h4 class="text-info">📌 Issue #{{ issue.id }}: {{ issue.title }}</h4>
+                    <p class="text-light mt-2">{{ issue.text }}</p>
+
+                    <!-- Nút Phân Tích AI -->
+                    <button class="btn btn-ai btn-sm mb-3" onclick="analyzeIssue('{{ issue.id }}', '{{ issue.title|escape }}', '{{ issue.text|escape }}')">
+                        🧠 Cố Vấn AI Phân Tích
+                    </button>
+
+                    <!-- Khung Hiển Thị AI Phân Tích -->
+                    <div id="ai-res-{{ issue.id }}" class="ai-box d-none mb-3"></div>
+
+                    <hr class="border-secondary">
+
+                    <!-- Danh sách các Lựa chọn -->
+                    <h6 class="text-warning">Mệnh lệnh đưa ra (Human Decision):</h6>
+                    {% for opt in issue.options %}
+                        <div class="d-flex align-items-start mb-2 bg-dark p-2 rounded">
+                            <button class="btn btn-success btn-sm me-2 mt-1" onclick="submitDecision('{{ issue.id }}', '{{ opt.id }}')">
+                                Chọn #{{ opt.id }}
+                            </button>
+                            <span class="text-light" style="font-size:0.95rem;">{{ opt.text }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="card card-custom p-5 text-center">
+                <h4 class="text-success">🎉 Hiện tại không có Issue nào cần xử lý!</h4>
+                <p class="text-muted">Quốc gia <strong>{{ nation }}</strong> hiện đang hòa bình. Hãy quay lại sau khi game phát Issue mới.</p>
+                <div>
+                    <a href="/" class="btn btn-primary btn-sm">🔄 Tải Lại Trang</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function analyzeIssue(id, title, text) {
+            const box = document.getElementById(`ai-res-${id}`);
+            box.classList.remove('d-none');
+            box.innerHTML = '⏳ Cố vấn AI đang phân tích dữ liệu...';
+
+            fetch('/analyze_issue', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ title: title, text: text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    box.innerHTML = `<strong>💡 Khuyên dùng từ AI:</strong>\n\n${data.analysis}`;
+                } else {
+                    box.innerHTML = `❌ Lỗi: ${data.message}`;
+                }
+            });
+        }
+
+        function submitDecision(issueId, optionId) {
+            if(!confirm(`Xác nhận gửi quyết định Lựa chọn #${optionId} cho Issue #${issueId}?`)) return;
+
+            const formData = new FormData();
+            formData.append('issue_id', issueId);
+            formData.append('option_id', optionId);
+
+            fetch('/respond', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if(data.status === 'success') location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
