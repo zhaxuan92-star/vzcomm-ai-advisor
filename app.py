@@ -102,9 +102,10 @@ def fetch_nation_issues(nation, password):
     Truy vấn danh sách các Issue từ NationStates API.
     """
     nation_id = clean_nation_id(nation)
-    headers = get_ns_headers(nation_id, password=password)
-    url = f"[https://www.nationstates.net/cgi-bin/api.cgi?nation=](https://www.nationstates.net/cgi-bin/api.cgi?nation=){nation_id}&q=issues"
-    
+    headers = get_ns_headers(nation_id, password=password)  
+# ✅ SỬA THÀNH (Bỏ hoàn toàn dấu [ ]):
+url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation_id}&q=issues"
+
     issues = []
     error_msg = None
 
