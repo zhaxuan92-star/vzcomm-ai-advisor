@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài Đặt & Trang Mật - Cố Vấn AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: bold; color: #cbd5e1; margin-bottom: 5px; }
+        input, select { width: 100%; background-color: #0f172a; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #8b5cf6; }
+        .btn-submit { width: 100%; background-color: #8b5cf6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
+        .btn-submit:hover { background-color: #7c3aed; }
+        .btn-back { display: block; text-align: center; color: #94a3b8; text-decoration: none; font-size: 13px; margin-top: 15px; }
+        .msg { background-color: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #a7f3d0; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color: #a78bfa; text-align: center; margin-bottom: 5px;">🔐 Trang Mật & Cấu Hình</h2>
+        <p style="color: #94a3b8; text-align: center; font-size: 12px; margin-bottom: 20px;">Quản lý thông tin bảo mật cho quốc gia: <strong style="color: #facc15;">{{ nation }}</strong></p>
+
+        {% if message %}
+        <div class="msg">{{ message }}</div>
+        {% endif %}
+
+        <form action="/settings" method="POST">
+            <div class="form-group">
+                <label>Tên Quốc Gia (Cố định):</label>
+                <input type="text" value="{{ nation }}" disabled style="opacity: 0.6; cursor: not-allowed;">
+            </div>
+
+            <div class="form-group">
+                <label>Mật Khẩu Quốc Gia (X-Password API):</label>
+                <input type="password" name="password" value="{{ password }}" required placeholder="Nhập mật khẩu mới nếu muốn đổi">
+            </div>
+
+            <div class="form-group">
+                <label>Định Hướng Quốc Gia (AI sẽ chọn theo hướng này):</label>
+                <select name="ideology">
+                    <option value="Tự do cá nhân, Kinh tế thị trường & Dân chủ" {% if ideology == 'Tự do cá nhân, Kinh tế thị trường & Dân chủ' %}selected{% endif %}>Tự do & Dân chủ</option>
+                    <option value="Tập trung quyền lực, An ninh quân sự & Kỷ luật" {% if ideology == 'Tập trung quyền lực, An ninh quân sự & Kỷ luật' %}selected{% endif %}>Quân sự & Kỷ luật</option>
+                    <option value="Tối ưu hóa Tăng trưởng Kinh tế & Doanh nghiệp" {% if ideology == 'Tối ưu hóa Tăng trưởng Kinh tế & Doanh nghiệp' %}selected{% endif %}>Phát triển Kinh tế</option>
+                    <option value="Công bằng Xã hội, Môi trường & Phúc lợi" {% if ideology == 'Công bằng Xã hội, Môi trường & Phúc lợi' %}selected{% endif %}>Phúc lợi & Môi trường</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">💾 LƯU THAY ĐỔI</button>
+        </form>
+
+        <a href="/" class="btn-back">⬅ Quay lại Bảng Điều Khiển</a>
+    </div>
+</body>
+</html>
