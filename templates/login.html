@@ -3,36 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập Quốc Gia - Cố Vấn AI</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <title>Đăng Nhập - Cố Vấn AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+        .login-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: bold; color: #cbd5e1; margin-bottom: 5px; }
+        input, select { width: 100%; background-color: #0f172a; border: 1px solid #334155; color: white; padding: 10px; border-radius: 8px; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #38bdf8; }
+        .btn-submit { width: 100%; background-color: #0284c7; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
+        .btn-submit:hover { background-color: #0369a1; }
+        .error-msg { background-color: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fca5a5; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
-    <div class="bg-slate-800 p-8 rounded-xl border border-slate-700 shadow-2xl w-full max-w-md">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-cyan-400">🏛️ Cố Vấn AI NationStates</h1>
-            <p class="text-slate-400 text-sm mt-1">Cấu hình thông tin tài khoản để tự động hóa</p>
-        </div>
+<body>
+    <div class="login-card">
+        <h2 style="color: #38bdf8; text-align: center; margin-bottom: 5px;">🏛️ Cố Vấn AI NationStates</h2>
+        <p style="color: #94a3b8; text-align: center; font-size: 12px; margin-bottom: 20px;">Cấu hình tài khoản để kích hoạt Bot Auto</p>
 
         {% if error %}
-        <div class="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-lg text-sm mb-4">
-            {{ error }}
-        </div>
+        <div class="error-msg">{{ error }}</div>
         {% endif %}
 
-        <form action="/login" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-sm font-semibold text-slate-300 mb-1">Tên Quốc Gia (Nation Name):</label>
-                <input type="text" name="nation" required placeholder="Ví dụ: vzcomm" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500">
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label>Tên Quốc Gia (Nation Name):</label>
+                <input type="text" name="nation" required placeholder="ví dụ: vzcomm">
             </div>
 
-            <div>
-                <label class="block text-sm font-semibold text-slate-300 mb-1">Mật Khẩu Quốc Gia (Password):</label>
-                <input type="password" name="password" required placeholder="Nhập mật khẩu trong game" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500">
+            <div class="form-group">
+                <label>Mật Khẩu Quốc Gia (Password):</label>
+                <input type="password" name="password" required placeholder="Mật khẩu game">
             </div>
 
-            <div>
-                <label class="block text-sm font-semibold text-slate-300 mb-1">Định Hướng Phát Triển Quốc Gia:</label>
-                <select name="ideology" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500">
+            <div class="form-group">
+                <label>Định Hướng Quốc Gia:</label>
+                <select name="ideology">
                     <option value="Tự do cá nhân, Kinh tế thị trường & Dân chủ">Tự do & Dân chủ</option>
                     <option value="Tập trung quyền lực, An ninh quân sự & Kỷ luật">Quân sự & Kỷ luật</option>
                     <option value="Tối ưu hóa Tăng trưởng Kinh tế & Doanh nghiệp">Phát triển Kinh tế</option>
@@ -40,10 +47,8 @@
                 </select>
             </div>
 
-            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg shadow-lg transition mt-2">
-                🚀 ĐĂNG NHẬP
-            </button>
+            <button type="submit" class="btn-submit">🚀 ĐĂNG NHẬP BOT</button>
         </form>
     </div>
 </body>
-        </html>
+</html>
