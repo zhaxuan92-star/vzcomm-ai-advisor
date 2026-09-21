@@ -21,7 +21,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Khóa bí mật dùng để mã hóa Session đăng nhập
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "vzcomm_super_secure_secret_key_2026")
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or __import__('secrets').token_hex(32)
 
 # Danh sách API Key dự phòng (Fallback Mechanism)
 GEMINI_KEYS = [
@@ -171,7 +171,7 @@ def submit_issue_response(nation, password, issue_id, option_id):
     nation_id = clean_nation_id(nation)
     
     # URL thuần túy gửi kết quả
-    url = f"[https://www.nationstates.net/cgi-bin/api.cgi?nation=](https://www.nationstates.net/cgi-bin/api.cgi?nation=){nation_id}&c=issue&issue={issue_id}&option={option_id}"
+    url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation_id}&c=issue&issue={issue_id}&option={option_id}"
     
     headers = get_ns_headers(nation_id, password=password)
 
@@ -250,7 +250,7 @@ def index():
     issues, api_error = fetch_nation_issues(nation, password)
 
     # URL dẫn sang trang Web chính của NationStates
-    game_url = f"[https://www.nationstates.net/nation=](https://www.nationstates.net/nation=){clean_id}"
+    game_url = f"https://www.nationstates.net/nation={clean_id}"
 
     return render_template(
         'index.html',
@@ -321,4 +321,4 @@ def auto_solve_all():
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
